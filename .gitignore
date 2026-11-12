@@ -1,0 +1,16 @@
+# ==== 不纳入版本管理 ====
+# 讲义 PDF 的文本提取结果（课程材料，不公开）
+_extract/
+
+# 调试与临时验证脚本
+_build/
+
+# 系统临时文件
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
