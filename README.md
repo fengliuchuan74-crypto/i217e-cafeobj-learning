@@ -1,25 +1,112 @@
-# I217E 関数プログラミング(E) · CafeOBJ 交互学习系统
+# I217E 関数プログラミング(E) — CafeOBJ Interactive Learning System
+
+**▶ Live demo / デモ / 在线版: <https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>**
+
+A self-contained, offline, interactive study system for the JAIST course **I217E 関数プログラミング(E)**
+(*Functional Programming*, algebraic specification & term rewriting with **CafeOBJ**).
+
+No build step, no server, no dependencies: open `index.html` and it runs.
+The key feature is an **embedded term-rewriting engine** that actually executes the course's CafeOBJ
+modules in the browser — every code block in the lessons is runnable, with step-by-step reduction traces.
+
+[English](#english) · [日本語](#日本語) · [中文](#中文)
+
+---
+
+## English
+
+### What it is
+
+Course material for I217E is normally taught with the CafeOBJ system: you write equations, and the
+system rewrites terms to normal forms; you then prove properties by structural induction ("proof scores").
+This project turns that into a **single-page interactive study tool**, so a learner can read a concept,
+run the code immediately, watch each rewrite step, and test themselves — without installing anything.
+
+### Contents
+
+| Part | Chapters |
+|---|---|
+| Orientation | **L0** what the course is about, how to read CafeOBJ code, exam format |
+| Foundations | **L1** sorts / operators / terms / equations ・ **L2** modules, order-sorted sorts, lists ・ **L3** term rewriting (positions, redex, E-strategy, AC matching) |
+| Data structures | **L4** parameterized modules & views ・ **L5** tables ・ **L6** infinite lists ・ **L7** multisets |
+| Language processors | **L8** interpreter ・ **L9** virtual machine ・ **L10** compiler (with backpatching) |
+| Verification | **L11** induction over naturals ・ **L12** induction over lists ・ **L13** verification of quantum teleportation ・ **L14** proof assistant (CITP) |
+| Exam prep | syntax cheat-sheet, five answer templates, two mock exams, last-24-hours checklist |
+| Homework | **HW1–HW14**, each with hints, collapsible reference answers, self-check quizzes, and an auto-saved draft pad |
+
+Scale: **17 chapters / 90 sections / 63 quiz & flashcard sets / 33 runnable code blocks / 16 interactive widgets.**
+
+### Four interactive features
+
+1. **▶ Run** — executes the snippet in the built-in engine and shows every rewriting step, the result and its sort.
+2. **Reduction player** — replays a term's rewriting frame by frame: which equation fired, and at which position (`ε`, `2.1`, …).
+3. **Strategy comparator** — runs the same term under two E-strategies side by side, so it is visible why
+   `strat: (1 0)` on infinite lists gives laziness and why removing it diverges.
+4. **Quantum simulator** (L13) — apply H / CX / X / Z gates and watch the actual amplitudes; a 5-step
+   teleportation walkthrough that verifies all four measurement branches recover the original state.
+
+Also: per-section "I learned this" progress, wrong answers enter a 1→3→7→21-day spaced-repetition queue,
+and an exam countdown.
+
+### Engine scope and limitations
+
+Implemented: order-sorted sort lattice with overload resolution by least rank, `assoc` / `comm` / `id:`
+with a backtracking AC matcher, E-strategy interpretation, conditional equations, `open/close/red` sessions,
+and proof scores (fresh constants + induction hypothesis as an equation).
+
+Not implemented: **parameterized modules (`mod*`) and views are not executed** (that needs full module-expression
+evaluation). L4/L5 are taught with diagrams plus hand-instantiated equivalent modules, and the lesson text says so.
+A few printing details differ slightly from official CafeOBJ 1.5.9 (e.g. an extra layer of parentheses); semantics agree.
+Where official CafeOBJ is available, the snippets can be pasted there unchanged.
+
+### Running it
+
+- Any OS: open `index.html` in a browser.
+- Windows: double-click `开始学习.bat` (`start learning`).
+- Or use the hosted version: <https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
+
+Progress, quiz history and homework drafts are stored in the browser's `localStorage`; nothing is sent anywhere.
+
+### Language note
+
+The **learning content is written in Chinese**, with all technical terms kept in English (sort, operator,
+term, redex, E-strategy, proof score, …), since it was built as personal study material for exam preparation.
+The engine, the code and this README are language-neutral / English.
+
+### Verification
+
+All 33 runnable snippets are regression-tested in Node (execute, then check every `red` result and error):
+
+```js
+node _build/verify_content.js     // => FAILED: 0
+```
+
+---
+
+## 日本語
+
+JAIST **I217E 関数プログラミング(E)**（CafeOBJ による代数仕様・項書き換え）の**オフライン対話型学習システム**です。
+
+- ビルド・サーバ・依存関係は不要。`index.html` を開くだけで動作します（Windows では `开始学习.bat` をダブルクリック）。
+- ブラウザ内に**項書き換えエンジンを内蔵**しており、講義で扱う CafeOBJ のモジュールを**実際に実行**できます。
+  各コードブロックは「▶ 実行」で動き、書き換えの各ステップ（どの等式がどの位置で適用されたか）を表示します。
+- 内容は L0（導入）から L14（証明支援系 CITP）までの全 14 回分＋期末対策＋宿題 HW1–HW14。
+  項書き換え（E-strategy、AC マッチング）、無限リスト、多重集、Minila のインタプリタ／VM／コンパイラ、
+  構造帰納法による証明スコア（自然数・リスト・量子テレポーテーションの検証）を扱います。
+- 制限: `mod*` パラメータ化モジュールと view は実行対象外（L4/L5 は図と等価な手書きインスタンス化モジュールで解説）。
+- **本文は中国語**（技術用語は英語表記）で書かれています。個人の試験対策ノートとして作成したためです。
+
+---
+
+## 中文
 
 JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重写）的**离线交互式学习系统**。
 纯前端、零依赖、双击即用：浏览器里能**真的执行 CafeOBJ 代码**（内置教学用重写引擎），并配套随堂测验、闪卡、间隔复习、作业系统与两套模拟卷。
 
-> A self-contained, offline, interactive study system for the JAIST course *I217E Functional Programming (CafeOBJ)*.
-> No build step, no server, no dependencies — open `index.html` and it runs. Includes an embedded term-rewriting engine that executes the course's CafeOBJ modules for real.
+> 在线版：<https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
+> 本地：双击 `开始学习.bat`（Windows）或直接打开 `index.html`（任意系统）
 
----
-
-## 快速开始 / Quick start
-
-```
-双击  开始学习.bat        (Windows)
-或直接双击  index.html    (任意浏览器)
-```
-
-无需联网、无需安装 CafeOBJ。进度、答题记录、作业草稿保存在浏览器 `localStorage`。
-
----
-
-## 内容覆盖 / Coverage
+### 内容覆盖
 
 | 部分 | 章节 |
 |---|---|
@@ -33,9 +120,7 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 
 规模：**17 章 / 90 节 / 63 组测验与闪卡 / 33 个可运行代码块 / 16 个交互组件**。
 
----
-
-## 四个核心交互 / Interactive features
+### 四个核心交互
 
 1. **▶ 运行** — 每个代码块都能在浏览器里真跑，显示逐步归约、结果与排序。
 2. **归约播放器** — 逐帧回放项重写：哪一步、用了哪条等式、替换在哪个位置（`ε`、`2.1` …）。
@@ -44,9 +129,7 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 
 配套：每节「我学会了这一节」记录进度、答错自动进入 1→3→7→21 天间隔复习队列、考试倒计时。
 
----
-
-## 内置引擎支持的模块 / Built-in modules
+### 内置引擎支持的模块
 
 `BOOL` `BOOL-IF` `NAT` `NAT-ERR` `NAT-IF` `NATLIST` `FACT` `OEDC-FACT` `GCD` `QSORT`
 `ERATOSTHENES-SIEVE(-FIN)` `NAT-TRIPLE-IMLM/-OMLM` `INF-LIST` `NAT-INF-LIST` `HAMMING`
@@ -55,15 +138,13 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 引擎实现：排序格（含子排序与重载 rank 解析）、`assoc/comm/id:` 的 AC 匹配（回溯式匹配器）、
 E-strategy 解释、条件等式、`open/close/red` 会话、证明分数（新常量 + IH 等式）。
 
-### 已知限制 / Limitations
+### 已知限制
 
 - `mod*` **参数化模块与 view 不执行**（需要完整的模块表达式求解）。L4/L5 以图文 + 手工实例化的等价模块讲解，课文中有明确标注。
 - 少数打印格式与官方 CafeOBJ 1.5.9 有细微差异（例如 `('a,1)` 多一层括号），语义一致。
 - 有官方 `CafeOBJ159` 时，可把系统中的代码原样粘进去对照运行。
 
----
-
-## 目录结构 / Layout
+### 目录结构
 
 ```
 index.html            入口（脚本按序加载，无构建）
@@ -81,21 +162,18 @@ js/app.js             导航、路由、进度、倒计时、挂载
 开始学习.bat           Windows 一键启动
 ```
 
----
+### 自检
 
-## 自检 / Verification
-
-内容文件中的 33 个可运行代码块均通过 Node 回归（每块执行并检查 `red` 结果与错误）：
-
-```js
-// 加载 engine + 全部 content 文件，提取每个 <pre> 源码并 runScript
-node _build/verify_content.js     // FAILED: 0
-```
+内容文件中的 33 个可运行代码块均通过 Node 回归（每块执行并检查 `red` 结果与错误），全部通过。
 
 ---
 
 ## 免责声明 / Disclaimer
 
-本项目为个人学习笔记与教学演示，非官方教材。讲义结构参考 JAIST I217E（担当：緒方和博 教授）课程大纲；
-所有讲解文字、可视化组件与引擎实现均为本仓库原创。课程原始讲义与 PDF 不在本仓库内。
-如涉及课程材料版权问题，请联系仓库所有者删除。
+本项目为个人学习笔记与教学演示，**非官方教材**，与课程方无关。
+讲义结构参考 JAIST I217E（担当：緒方和博 教授）的课程大纲；所有讲解文字、可视化组件与引擎实现均为本仓库原创。
+**课程原始讲义与 PDF 不在本仓库内**（已在 `.gitignore` 中排除）。如涉及课程材料版权问题，请联系仓库所有者删除。
+
+This is unofficial personal study material, not affiliated with the course. All prose, visualizations and the
+engine implementation are original work of this repository; the lecturer's original slides and PDFs are **not**
+included. Please contact the repository owner for any takedown request.
