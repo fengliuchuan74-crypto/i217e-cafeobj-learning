@@ -61,8 +61,11 @@ Where official CafeOBJ is available, the snippets can be pasted there unchanged.
 
 ### Running it
 
-- Any OS: open `index.html` in a browser.
-- Windows: double-click `开始学习.bat` (`start learning`).
+- Any OS: open `index.html` in a browser — **this is the recommended way, no prompts**.
+- Windows: double-click `打开学习系统.url` (a plain shortcut to `index.html`), or `开始学习.bat`.
+  A `.bat` may trigger the Windows dialog *“Open File — Security Warning: the publisher could not be verified”*,
+  because batch files carry no digital signature. It is a routine prompt, not a virus: click **Run**, or just open
+  `index.html` / the `.url` shortcut instead.
 - Or use the hosted version: <https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
 
 Progress, quiz history and homework drafts are stored in the browser's `localStorage`; nothing is sent anywhere.
@@ -87,7 +90,7 @@ node _build/verify_content.js     // => FAILED: 0
 
 JAIST **I217E 関数プログラミング(E)**（CafeOBJ による代数仕様・項書き換え）の**オフライン対話型学習システム**です。
 
-- ビルド・サーバ・依存関係は不要。`index.html` を開くだけで動作します（Windows では `开始学习.bat` をダブルクリック）。
+- ビルド・サーバ・依存関係は不要。`index.html` を開くだけで動作します（Windows では `打开学习系统.url` か `开始学习.bat` をダブルクリック。`.bat` は署名がないため Windows の「発行元を確認できません」警告が出ることがありますが、無害です。「実行」を押すか、`index.html` を直接開いてください）。
 - ブラウザ内に**項書き換えエンジンを内蔵**しており、講義で扱う CafeOBJ のモジュールを**実際に実行**できます。
   各コードブロックは「▶ 実行」で動き、書き換えの各ステップ（どの等式がどの位置で適用されたか）を表示します。
 - 内容は L0（導入）から L14（証明支援系 CITP）までの全 14 回分＋期末対策＋宿題 HW1–HW14。
@@ -104,7 +107,13 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 纯前端、零依赖、双击即用：浏览器里能**真的执行 CafeOBJ 代码**（内置教学用重写引擎），并配套随堂测验、闪卡、间隔复习、作业系统与两套模拟卷。
 
 > 在线版：<https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
-> 本地：双击 `开始学习.bat`（Windows）或直接打开 `index.html`（任意系统）
+> 本地：双击 `index.html`（任意系统，不弹任何提示）或 `打开学习系统.url`（Windows）；
+> `开始学习.bat` 可能触发 Windows 的「无法验证发布者」安全警告——批处理脚本没有数字签名，属例行提示，点「运行」即可，或改用上面两种方式。
+
+### 打开时弹「安全警告」怎么办
+
+双击 `开始学习.bat` 出现 *「打开文件 - 安全警告 / 无法验证发布者」* 时：这是 Windows 对未签名 `.bat` 的例行提示，不是病毒。
+① 直接双击 `index.html` 或 `打开学习系统.url`（不会弹）；② 或点「运行(R)」，只弹一次；③ 或右键 `.bat` → 属性 → 勾选「解除锁定」。
 
 ### 内容覆盖
 

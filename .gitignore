@@ -10,6 +10,9 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+# 本机专用快捷方式（含绝对路径，不适合入库）
+*.url
+
 # 编辑器
 .vscode/
 .idea/
