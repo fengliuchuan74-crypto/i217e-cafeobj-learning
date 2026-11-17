@@ -62,8 +62,9 @@ Where official CafeOBJ is available, the snippets can be pasted there unchanged.
 ### Running it
 
 - Open **`I217E学习系统.html`** in any browser. That is the whole app: no build, no server, no prompts.
-- `index.html` is a 5-line redirect to it, kept only because **GitHub Pages serves `index.html` as the site root**
-  (that is what makes the hosted URL work). You never need to touch it locally.
+- `index.html` in this repository is a 5-line redirect to it, kept **only** because GitHub Pages serves
+  `index.html` as the site root (that is what makes the hosted URL work). If you use the project locally,
+  you can simply delete `index.html` — nothing references it.
 - Or use the hosted version: <https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
 
 Progress, quiz history and homework drafts are stored in the browser's `localStorage`; nothing is sent anywhere.
@@ -105,14 +106,14 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 纯前端、零依赖、双击即用：浏览器里能**真的执行 CafeOBJ 代码**（内置教学用重写引擎），并配套随堂测验、闪卡、间隔复习、作业系统与两套模拟卷。
 
 > 在线版：<https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
-> 本地：**双击 `I217E学习系统.html`**（不弹任何提示）；`index.html` 只是给 GitHub Pages 用的跳转页，本地不用管它。
+> 本地：**双击 `I217E学习系统.html`**（不弹任何提示）。
 
-### 为什么会有两个 html
+### 为什么仓库里还有一个 `index.html`
 
 | 文件 | 作用 |
 |---|---|
 | `I217E学习系统.html` | **真正的系统**，双击这个 |
-| `index.html` | 5 行跳转页。GitHub Pages 只把根目录的 `index.html` 当首页，所以它必须存在，否则在线演示链接会 404 |
+| `index.html` | 5 行跳转页。GitHub Pages 只把根目录的 `index.html` 当首页，删了它在线演示链接就会 404。**本地可以删，仓库里必须留** |
 
 ### 内容覆盖
 
@@ -156,7 +157,7 @@ E-strategy 解释、条件等式、`open/close/red` 会话、证明分数（新�
 
 ```
 I217E学习系统.html    入口（双击这个；脚本按序加载，无构建）
-index.html            跳转页（仅 GitHub Pages 需要）
+index.html            跳转页（仅为 GitHub Pages 首页而存在，本地可删）
 css/style.css         深色主题样式
 js/engine.js          CafeOBJ 子集：词法/语法/AC 匹配/E-strategy/归约/内置模块
 js/widgets.js         交互组件（项树、归约播放器、格图、策略对比、列表演示、Minila）
