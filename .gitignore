@@ -12,6 +12,7 @@ desktop.ini
 
 # 本机专用快捷方式（含绝对路径，不适合入库）
 *.url
+*.lnk
 
 # 编辑器
 .vscode/
