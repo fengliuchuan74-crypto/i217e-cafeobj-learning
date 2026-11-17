@@ -5,7 +5,7 @@
 A self-contained, offline, interactive study system for the JAIST course **I217E 関数プログラミング(E)**
 (*Functional Programming*, algebraic specification & term rewriting with **CafeOBJ**).
 
-No build step, no server, no dependencies: open `index.html` and it runs.
+No build step, no server, no dependencies: open `I217E学习系统.html` and it runs.
 The key feature is an **embedded term-rewriting engine** that actually executes the course's CafeOBJ
 modules in the browser — every code block in the lessons is runnable, with step-by-step reduction traces.
 
@@ -61,12 +61,9 @@ Where official CafeOBJ is available, the snippets can be pasted there unchanged.
 
 ### Running it
 
-- Any OS: open `index.html` in a browser — **this is the recommended way, no prompts**.
-- Windows: double-click `开始学习.bat` (if you prefer a launcher), but simply opening `index.html` is the
-  recommended path and shows no dialog at all.
-  A `.bat` may trigger the Windows dialog *“Open File — Security Warning: the publisher could not be verified”*,
-  because batch files carry no digital signature. It is a routine prompt, not a virus: click **Run**, or just open
-  `index.html` instead.
+- Open **`I217E学习系统.html`** in any browser. That is the whole app: no build, no server, no prompts.
+- `index.html` is a 5-line redirect to it, kept only because **GitHub Pages serves `index.html` as the site root**
+  (that is what makes the hosted URL work). You never need to touch it locally.
 - Or use the hosted version: <https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
 
 Progress, quiz history and homework drafts are stored in the browser's `localStorage`; nothing is sent anywhere.
@@ -91,7 +88,7 @@ node _build/verify_content.js     // => FAILED: 0
 
 JAIST **I217E 関数プログラミング(E)**（CafeOBJ による代数仕様・項書き換え）の**オフライン対話型学習システム**です。
 
-- ビルド・サーバ・依存関係は不要。`index.html` を開くだけで動作します（Windows で `开始学习.bat` を使う場合、署名がないため「発行元を確認できません」という警告が出ることがありますが無害です。「実行」を押すか、`index.html` を直接開いてください）。
+- ビルド・サーバ・依存関係は不要。`I217E学习系统.html` を開くだけで動作します（`index.html` は GitHub Pages 用の転送ページです）。
 - ブラウザ内に**項書き換えエンジンを内蔵**しており、講義で扱う CafeOBJ のモジュールを**実際に実行**できます。
   各コードブロックは「▶ 実行」で動き、書き換えの各ステップ（どの等式がどの位置で適用されたか）を表示します。
 - 内容は L0（導入）から L14（証明支援系 CITP）までの全 14 回分＋期末対策＋宿題 HW1–HW14。
@@ -108,13 +105,14 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 纯前端、零依赖、双击即用：浏览器里能**真的执行 CafeOBJ 代码**（内置教学用重写引擎），并配套随堂测验、闪卡、间隔复习、作业系统与两套模拟卷。
 
 > 在线版：<https://fengliuchuan74-crypto.github.io/i217e-cafeobj-learning/>
-> 本地：**双击 `index.html`**（任意系统，不弹任何提示）；
-> 想用启动器就双击 `开始学习.bat`——批处理脚本没有数字签名，可能触发 Windows 的「无法验证发布者」警告，属例行提示，点「运行」即可。
+> 本地：**双击 `I217E学习系统.html`**（不弹任何提示）；`index.html` 只是给 GitHub Pages 用的跳转页，本地不用管它。
 
-### 打开时弹「安全警告」怎么办
+### 为什么会有两个 html
 
-双击 `开始学习.bat` 出现 *「打开文件 - 安全警告 / 无法验证发布者」* 时：这是 Windows 对未签名 `.bat` 的例行提示，不是病毒。
-① **直接双击 `index.html`**（不会弹）；② 或点「运行(R)」，只弹一次；③ 或右键 `.bat` → 属性 → 勾选「解除锁定」。
+| 文件 | 作用 |
+|---|---|
+| `I217E学习系统.html` | **真正的系统**，双击这个 |
+| `index.html` | 5 行跳转页。GitHub Pages 只把根目录的 `index.html` 当首页，所以它必须存在，否则在线演示链接会 404 |
 
 ### 内容覆盖
 
@@ -157,7 +155,8 @@ E-strategy 解释、条件等式、`open/close/red` 会话、证明分数（新�
 ### 目录结构
 
 ```
-index.html            入口（脚本按序加载，无构建）
+I217E学习系统.html    入口（双击这个；脚本按序加载，无构建）
+index.html            跳转页（仅 GitHub Pages 需要）
 css/style.css         深色主题样式
 js/engine.js          CafeOBJ 子集：词法/语法/AC 匹配/E-strategy/归约/内置模块
 js/widgets.js         交互组件（项树、归约播放器、格图、策略对比、列表演示、Minila）
@@ -169,7 +168,6 @@ js/content-adv.js     L11–L14 + 期末冲刺
 js/homework.js        HW1–HW14 作业系统
 js/app.js             导航、路由、进度、倒计时、挂载
 学习指南.md            课程导览 + 19 天学习计划 + 分数策略 + 易错清单
-开始学习.bat           Windows 一键启动
 ```
 
 ### 自检
