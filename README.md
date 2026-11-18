@@ -26,15 +26,15 @@ run the code immediately, watch each rewrite step, and test themselves — witho
 
 | Part | Chapters |
 |---|---|
-| Orientation | **L0** what the course is about, how to read CafeOBJ code, exam format |
+| Orientation | **P0** zero-background entry: where the course is used in the real world (7 interactive labs), the minimal maths, how to read CafeOBJ ・ **L0** what the course is about, exam format |
 | Foundations | **L1** sorts / operators / terms / equations ・ **L2** modules, order-sorted sorts, lists ・ **L3** term rewriting (positions, redex, E-strategy, AC matching) |
 | Data structures | **L4** parameterized modules & views ・ **L5** tables ・ **L6** infinite lists ・ **L7** multisets |
-| Language processors | **L8** interpreter ・ **L9** virtual machine ・ **L10** compiler (with backpatching) |
+| Language processors | **L8** interpreter ・ **L9** virtual machine ・ **L10** compiler (relative-offset jump generation) |
 | Verification | **L11** induction over naturals ・ **L12** induction over lists ・ **L13** verification of quantum teleportation ・ **L14** proof assistant (CITP) |
 | Exam prep | syntax cheat-sheet, five answer templates, two mock exams, last-24-hours checklist |
 | Homework | **HW1–HW14**, each with hints, collapsible reference answers, self-check quizzes, and an auto-saved draft pad |
 
-Scale: **17 chapters / 90 sections / 63 quiz & flashcard sets / 33 runnable code blocks / 16 interactive widgets.**
+Scale: **18 chapters / 100 sections / 64 quiz & flashcard sets / 40 runnable code blocks / 58 glossary terms.**
 
 ### Four interactive features
 
@@ -77,7 +77,7 @@ The engine, the code and this README are language-neutral / English.
 
 ### Verification
 
-All 33 runnable snippets are regression-tested in Node (execute, then check every `red` result and error):
+All 40 runnable snippets are regression-tested in Node (execute, then check every `red` result and error):
 
 ```js
 node _build/verify_content.js     // => FAILED: 0
@@ -102,6 +102,17 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ による代数仕様�
 
 ## 中文
 
+### 本次修订（2026-11-18）
+
+以课程官网 2026 版 14 份讲义 PDF 为准，补完 L7–L10 与作业系统，并修正与讲义不一致的地方：
+
+- **补齐 L7–L10 的「初学者层」**：章前必备、章末小结、每节导读卡（是什么/为什么/怎么用/现实里在哪用/常见错误）、选择题逐项解析、代码块逐行注释；
+- **按讲义重写 L8–L10**：`n(3)` 写法、`estm`、并列顺序组合（不是分号）、`for` 语句、`evalExp` / `eval` / `interpret`、`errNat` 错误传播、「0 假非 0 真」；
+- **修正 Minila 指令语义**：`jump(n)` = `pc+n`、`bjump(n)` = `pc−n`（无条件向后）、`jumpOnCond(n)` 条件向前；原文把 `bjump` 说成「假则跳」、把 while 的退出/回跳写反了，已按讲义改正（含 HW8–10 与测验）；
+- **修正 L7**：「键不存在」的用例结果不是 `emp` 而是原样返回；新增「用多重集表示 Mutex 协议状态」一节（讲义 p.18–22，原系统缺失）；
+- **修演示器**：`if` 条件跳转接反（x=3 时算成 13，应为 30）、跳转改为相对偏移、支持 `===` 与 `do…od` 里的多条语句；
+- 补 `index.html`（GitHub Pages 首页），更新 README 统计数字。
+
 JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重写）的**离线交互式学习系统**。
 纯前端、零依赖、双击即用：浏览器里能**真的执行 CafeOBJ 代码**（内置教学用重写引擎），并配套随堂测验、闪卡、间隔复习、作业系统与两套模拟卷。
 
@@ -115,11 +126,20 @@ JAIST **I217E 関数プログラミング(E)**（CafeOBJ / 代数规格与项重
 | `I217E学习系统.html` | **真正的系统**，双击这个 |
 | `index.html` | 5 行跳转页。GitHub Pages 只把根目录的 `index.html` 当首页，删了它在线演示链接就会 404。**本地可以删，仓库里必须留** |
 
+### 给零基础学习者的功能
+
+- **P0 前置知识章**：先看课程知识在现实中的应用（7 个交互实验），再补最少的数学准备和 CafeOBJ 符号字典
+- **每个小节的导读卡**：是什么 / 为什么需要 / 怎么用 / 现实里在哪用 / 常见错误；每章有前置知识和章末小结
+- **代码块可直接编辑**：改完点运行，改乱了点「还原」；报错标出行号并给出中文原因
+- **📖 逐行解读**：每一行代码的大白话解释，部分代码附 Python 对照和手算过程
+- **术语悬停 + 术语表 + 全站搜索**（Ctrl+K）
+- **测验逐项解析**：每个选项为什么对、为什么错
+
 ### 内容覆盖
 
 | 部分 | 章节 |
 |---|---|
-| 导学 | **L0** 这门课在讲什么、如何读代码、考试形式 |
+| 导学 | **P0** 前置知识（零基础入口、交互实验）・ **L0** 这门课在讲什么、如何读代码、考试形式 |
 | 基础 | **L1** 排序·算子·项·等式 ・ **L2** 模块·阶排序·列表 ・ **L3** 项重写（位置 / redex / E-strategy / AC 匹配） |
 | 进阶 | **L4** 参数化模块与 view ・ **L5** 表 ・ **L6** 无限列表 ・ **L7** 多重集 |
 | 语言处理器 | **L8** 解释器 ・ **L9** 虚拟机 ・ **L10** 编译器（含回填） |
@@ -159,7 +179,13 @@ E-strategy 解释、条件等式、`open/close/red` 会话、证明分数（新�
 I217E学习系统.html    入口（双击这个；脚本按序加载，无构建）
 index.html            跳转页（仅为 GitHub Pages 首页而存在，本地可删）
 css/style.css         深色主题样式
-js/engine.js          CafeOBJ 子集：词法/语法/AC 匹配/E-strategy/归约/内置模块
+js/engine.js          CafeOBJ 子集：词法/语法/AC 匹配/E-strategy/归约/内置模块（报错带行号）
+js/glossary.js        术语表数据（悬停解释 + 术语表弹窗）
+js/learn.js           初学者辅助：可编辑代码块、逐行解读、报错提示、术语悬停、全站搜索
+js/pre-labs.js        P0 交互实验：应用场景地图、化简器
+js/pre-labs2.js       P0 交互实验：无限滚动、购物车、编译器+虚拟机、测试vs证明、多米诺归纳、类型检查
+js/content-pre.js     P0 前置知识章（零基础入口）
+css/learn.css         上述功能的样式
 js/widgets.js         交互组件（项树、归约播放器、格图、策略对比、列表演示、Minila）
 js/mounts.js          组件挂载表 + 量子态模拟器
 js/quiz.js            进度存储、弹窗测验、闪卡、间隔复习

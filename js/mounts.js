@@ -334,10 +334,11 @@
 
   M['w-l6-strat'] = function (el) {
     W.strategyDemo(el, {
-      mod: 'INF-LIST', term: '0 | mkNILFrom(1)', op: '_|_', outer: [0, 1, 0], maxSteps: 18,
-      note: '左边 (1 0)：先把头 0 算成 0，然后试根（没有规则），<b>停下来</b> —— 这就是惰性。<br>' +
-        '右边 (0 1 0)：先试根（没有规则），再去算尾巴 <code>mkNILFrom(1)</code>，它又长成 <code>1 | mkNILFrom(2)</code>，' +
-        '于是无限增长 —— <b>这就是发散</b>。所以 <code>_|_</code> 必须写 <code>{strat: (1 0)}</code>。'
+      mod: 'NAT-INF-LIST', term: '0 | mkNILFrom(1)', op: '_|_', outer: [1, 2, 0], maxSteps: 18,
+      left: '讲义的写法，只算头', right: '默认策略，头和尾巴都算',
+      note: '左边 (1 0)：先把头 0 算成 0，再试整个项（没有等式能用），<b>停下来</b>。尾巴 <code>mkNILFrom(1)</code> 不在策略里，没有被算 —— 这就是惰性。<br>' +
+        '右边 (1 2 0)（不写 strat 时的默认策略）：还要把第 2 个参数（尾巴）算到底。<code>mkNILFrom(1)</code> 变成 <code>1 | mkNILFrom(2)</code>，又要算它的尾巴……' +
+        '无限增长，到步数上限都停不下来 —— <b>这就是发散</b>。所以无限列表的 <code>_|_</code> 必须写 <code>{strat: (1 0)}</code>。'
     });
   };
   M['w-l6-take'] = function (el) {

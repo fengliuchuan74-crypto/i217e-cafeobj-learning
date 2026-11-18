@@ -229,6 +229,14 @@
     return { k: 'a', op: op, args: args };
   }
 
+  /* 把项整理成 AC 规范形：assoc 的算子拍平括号，comm 的算子把参数排好序。
+   * 用于判断 _=_ 两边是否「模 AC 相等」，例如 z + (x * z + y * z) 与 y * z + (z + x * z)。 */
+  function acCanon(t, mod) {
+    if (t.k !== 'a') return t;
+    var args = t.args.map(function (a) { return acCanon(a, mod); });
+    return mkApp(t.op, args, mod);
+  }
+
   function subst(t, b) {
     if (t.k === 'v') {
       var v = b[t.name];
@@ -444,10 +452,12 @@
     'true': 1, 'false': 1, 'imports': 1, 'signature': 1, 'axioms': 1, 'principal-sort': 1 };
 
   function tokenize(src) {
-    var toks = [], i = 0, n = src.length;
+    var toks = [], i = 0, n = src.length, line = 1;
+    /* 每个记号带上行号 ln，报错时用来告诉学习者「错在第几行」 */
+    toks.push = function (o) { o.ln = line; return Array.prototype.push.call(this, o); };
     while (i < n) {
       var c = src[i];
-      if (c === '\n') { toks.push({ t: 'nl' }); i++; continue; }
+      if (c === '\n') { toks.push({ t: 'nl' }); line++; i++; continue; }
       if (c === ' ' || c === '\t' || c === '\r') { i++; continue; }
       /* 注释 -- 到行尾 ; "..." ; ** ... */
       if (c === '-' && src[i + 1] === '-') { while (i < n && src[i] !== '\n') i++; continue; }
@@ -456,6 +466,7 @@
         while (j < n) {
           if (src[j] === '\\') { buf += src[j + 1]; j += 2; continue; }
           if (src[j] === '"') break;
+          if (src[j] === '\n') line++;
           buf += src[j]; j++;
         }
         i = j + 1;
@@ -470,6 +481,11 @@
         if (k < n && (src[k] === '*' || src[k] === '+' || src[k] === '-') && !isDig(src[k + 1] || '')) {
           var kk = k; while (kk < n && (src[kk] === '*' || src[kk] === '+' || src[kk] === '-')) kk++;
           toks.push({ t: 'id', v: src.slice(i, kk) }); i = kk; continue;
+        }
+        /* 形如 1st、2nd 这种以数字开头、后面紧跟字母的算子名（讲义 L6 的 1st） */
+        if (k < n && /[A-Za-z]/.test(src[k])) {
+          var k2 = k; while (k2 < n && isIdChar(src[k2])) k2++;
+          toks.push({ t: 'id', v: src.slice(i, k2) }); i = k2; continue;
         }
         toks.push({ t: 'num', v: src.slice(i, k) }); i = k; continue;
       }
@@ -1188,7 +1204,7 @@
     /* 2.5) 相等 = / 行为相等 == ：数字比较，否则范式结构比较 */
     if ((op === '_==_' || op === '_=_') && t.args.length === 2) {
       var na = numVal(t.args[0]), nb = numVal(t.args[1]);
-      var same = (na !== null && nb !== null) ? (na === nb) : eqTerm(t.args[0], t.args[1]);
+      var same = (na !== null && nb !== null) ? (na === nb) : eqTerm(acCanon(t.args[0], mod), acCanon(t.args[1], mod));
       if (op === '_==_') return { term: con(same ? 'true' : 'false'), rule: '(==)' };
       /* CafeOBJ 的 = 只靠等式归约：相等则 true，否则原样停留（不比 false）*/
       if (same) return { term: con('true'), rule: '(=)' };
@@ -1228,6 +1244,8 @@
         var rhs = substAc(eq.rhs, b, mod);
         return { term: rhs, rule: eq.name || '(anon)', subst: b };
       }
+      var ext = extRewrite(eq, t, mod);
+      if (ext) return ext;
     }
     /* 2) AC 单位元（id:）消除 */
     if (t.k === 'a') {
@@ -1247,6 +1265,54 @@
     /* 3) 内建数值/布尔 */
     var nr = numericRoot(t, mod);
     if (nr) return { term: nr.term, rule: nr.rule, subst: {} };
+    return null;
+  }
+
+  /* 扩展匹配（extension matching）：
+   * 对 assoc（或 assoc comm）的项 a1 a2 ... an，等式左边可以只匹配其中的一段（assoc）或一部分（AC），
+   * 例如 (@2) 的左边 (E | L1) @ L2 可以匹配 X @ (e | nil) @ (e2 | l2) 里后面那两段。真正的 CafeOBJ 也是这样做的。 */
+  function extRewrite(eq, t, mod) {
+    if (t.k !== 'a' || eq.lhs.k !== 'a' || eq.lhs.op !== t.op) return null;
+    var at = attrsOf(t, mod);
+    if (!at.assoc) return null;
+    var n = t.args.length, m = eq.lhs.args.length;
+    if (n <= m || m < 2) return null;
+    function tryGroup(sel) {
+      var picked = sel.map(function (i) { return t.args[i]; });
+      var grp = combineTerms(t.op, picked, mod);
+      var b = Object.create(null);
+      if (!match(eq.lhs, grp, b, mod, 0)) return null;
+      if (eq.cond) {
+        var c = reduce(substAc(eq.cond, b, mod), mod, { maxSteps: 4000 });
+        if (!(c.term.k === 'c' && c.term.op === 'true')) return null;
+      }
+      var rhs = substAc(eq.rhs, b, mod);
+      var rest = [], used = {};
+      sel.forEach(function (i) { used[i] = 1; });
+      var placed = false;
+      for (var i = 0; i < n; i++) {
+        if (used[i]) { if (!placed) { rest.push(rhs); placed = true; } continue; }
+        rest.push(t.args[i]);
+      }
+      return { term: mkApp(t.op, rest, mod), rule: eq.name || '(anon)', subst: b };
+    }
+    var len, i, r;
+    if (!at.comm) {
+      for (len = m; len < n; len++)
+        for (i = 0; i + len <= n; i++) {
+          var win = [];
+          for (var j = i; j < i + len; j++) win.push(j);
+          if ((r = tryGroup(win))) return r;
+        }
+      return null;
+    }
+    if (n > 8) return null;
+    for (var mask = 1; mask < (1 << n) - 1; mask++) {
+      var sel = [];
+      for (i = 0; i < n; i++) if (mask & (1 << i)) sel.push(i);
+      if (sel.length < m) continue;
+      if ((r = tryGroup(sel))) return r;
+    }
     return null;
   }
 
@@ -1293,11 +1359,18 @@
     return null;
   }
 
-  function replaceAt(t, path, repl) {
+  function replaceAt(t, path, repl, mod) {
     if (path.length === 0) return repl;
     var idx = path[0];
     var newArgs = t.args.slice();
-    newArgs[idx] = replaceAt(t.args[idx], path.slice(1), repl);
+    newArgs[idx] = replaceAt(t.args[idx], path.slice(1), repl, mod);
+    /* 替换后，如果外层是 assoc 算子，要把新出现的同名子项拍平（否则 (a @ b) @ c 会卡住，匹配不到 a @ (b @ c)） */
+    /* 内建数字运算（Nat 上的 + *）只处理两个参数，所以那里不拍平 */
+    if (mod && newArgs[idx].k === 'a' && newArgs[idx].op === t.op) {
+      var r0 = rankOf(t, mod);
+      var at = r0 ? r0.attrs : mod.attr(t.op);
+      if (at.assoc && !(r0 && /^(Nat|NzNat|Zero|Int|NzInt)$/.test(r0.co))) return mkApp(t.op, newArgs, mod);
+    }
     return { k: 'a', op: t.op, args: newArgs };
   }
 
@@ -1312,7 +1385,7 @@
     while (n < maxSteps) {
       var rd = findRedex(cur, [], mod, stratOverride);
       if (!rd) break;
-      var next = replaceAt(cur, rd.path, rd.contract);
+      var next = replaceAt(cur, rd.path, rd.contract, mod);
       n++;
       if (opts.trace) {
         steps.push({
@@ -1451,7 +1524,16 @@
         if (t.t === 'id' && (t.v === 'eq' || t.v === 'ceq')) {
           if (!cur) throw new Error('eq 必须写在模块或 open 之内');
           p.mod = cur;
+          var nEq = cur.eqs.length;
           parseEquation(p, cur, t.v === 'ceq');
+          /* open 里临时加的等式（引理、IH）优先于模块原有等式尝试，
+           * 这样 s(x) * sfact2(..) 会先用引理 p-sf2，与讲义的证明过程一致 */
+          if (cur.eqs.length > nEq) {
+            var added = cur.eqs.splice(nEq, cur.eqs.length - nEq);
+            cur._openEqs = cur._openEqs || 0;
+            Array.prototype.splice.apply(cur.eqs, [cur._openEqs, 0].concat(added));
+            cur._openEqs += added.length;
+          }
           continue;
         }
         if (t.t === 'id' && (t.v === 'red' || t.v === 'reduce')) {
@@ -1459,7 +1541,12 @@
           if (!cur) throw new Error('red 之前必须先 open 一个模块');
           p.mod = cur;
           var term = p.parseTerm(0, { '.': 1 });
-          p._skipNl(); if (p.at('sym', '.')) p.next();
+          p._skipNl();
+          if (p.i < p.toks.length && !p.at('sym', '.')) {
+            var lt = p.peek();
+            throw new Error('red 的式子后面多出了「' + (lt.v || lt.t) + '」：可能是式子没写完（比如 1 + 后面缺东西），或者漏了句号');
+          }
+          if (p.at('sym', '.')) p.next();
           var r = reduce(term, cur, { trace: opts.trace, maxSteps: opts.maxSteps || MAX_STEPS_DEFAULT });
           out.push({
             kind: 'red', input: formatTerm(term, cur), result: formatTerm(r.term, cur),
@@ -1474,8 +1561,11 @@
         }
         p.next();
       } catch (e) {
-        errors.push(e.message);
-        out.push({ kind: 'err', text: e.message });
+        var et = p.toks[Math.min(p.i, p.toks.length - 1)] || p.toks[p.i - 1];
+        var eln = et && et.ln ? et.ln : (t && t.ln);
+        var emsg = (eln ? '第 ' + eln + ' 行：' : '') + e.message;
+        errors.push(emsg);
+        out.push({ kind: 'err', text: emsg, line: eln });
         var guard = 0;
         while (p.i < p.toks.length && guard < 5000) {
           var z = p.next(); guard++;

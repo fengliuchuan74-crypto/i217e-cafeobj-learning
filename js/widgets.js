@@ -255,10 +255,8 @@
       return h;
     }
     el.innerHTML = '<div class="widget-t"><b>同一项 · 两种局部策略的对比</b><span>' + esc(opts.term) + '</span></div>' +
-      '<div class="cols">' + pane('策略 (' + inner[opts.op].join(' ') + ')：' + (opts.left || '先算参数') +
-        '（innermost 风格）', ri, '#4ea8ff') +
-      pane('策略 (' + outer[opts.op].join(' ') + ')：' + (opts.right || '先试根') +
-        '（outermost 风格）', ro, '#a86bd8') + '</div>' +
+      '<div class="cols">' + pane('策略 (' + inner[opts.op].join(' ') + ')：' + (opts.left || '先算参数'), ri, '#4ea8ff') +
+      pane('策略 (' + outer[opts.op].join(' ') + ')：' + (opts.right || '先试根'), ro, '#a86bd8') + '</div>' +
       '<div class="hint" style="text-align:left;margin-top:8px">' + (opts.note || '') + '</div>';
   };
 
@@ -386,6 +384,7 @@
       if (/\s/.test(c)) { i++; continue; }
       if (/[0-9]/.test(c)) { var j = i; while (j < src.length && /[0-9]/.test(src[j])) j++; toks.push({ t: 'num', v: +src.slice(i, j) }); i = j; continue; }
       if (/[a-zA-Z_]/.test(c)) { var k = i; while (k < src.length && /[a-zA-Z0-9_]/.test(src[k])) k++; toks.push({ t: 'id', v: src.slice(i, k) }); i = k; continue; }
+      if (src.substr(i, 3) === '===') { toks.push({ t: 'sym', v: '===' }); i += 3; continue; }
       var two = src.substr(i, 2);
       if (syms.indexOf(two) >= 0) { toks.push({ t: 'sym', v: two }); i += 2; continue; }
       toks.push({ t: 'sym', v: c }); i++;
@@ -419,8 +418,10 @@
     }
     function parseCmp() {
       var l = parseAdd();
-      while (peek().t === 'sym' && ['==', '!=', '<', '>', '<=', '>='].indexOf(peek().v) >= 0) {
-        var op = next().v; var r = parseAdd(); l = { k: 'bin', op: op, a: l, b: r };
+      while (peek().t === 'sym' && ['==', '===', '!=', '<', '>', '<=', '>='].indexOf(peek().v) >= 0) {
+        var raw = next().v;
+        var op = raw === '===' ? '==' : raw;
+        var r = parseAdd(); l = { k: 'bin', op: op, a: l, b: r };
       }
       return l;
     }
@@ -445,21 +446,39 @@
       if (peek().t === 'id') return { k: 'var', v: next().v };
       throw new Error('表达式解析失败：' + peek().v);
     }
+    /* 语句块：一直读到 stop 里的关键字（else / fi / od）或文件结束，中间用 ; 分隔 */
+    function parseBlock(stop) {
+      var stmts = [];
+      function atStop() {
+        if (peek().t === 'eof') return true;
+        for (var s = 0; s < stop.length; s++) if (isId(stop[s])) return true;
+        return false;
+      }
+      while (!atStop()) {
+        stmts.push(parseStmt());
+        if (peek().t === 'sym' && peek().v === ';') { next(); continue; }
+        break;
+      }
+      if (!stmts.length) return { k: 'skip' };
+      var s = stmts[0];
+      for (var k = 1; k < stmts.length; k++) s = { k: 'seq', s1: s, s2: stmts[k] };
+      return s;
+    }
     function parseStmt() {
       if (isId('skip')) { next(); return { k: 'skip' }; }
       if (isId('if')) {
         next(); var c = parseExp();
-        if (!isId('then')) eat('id', 'then'); else next();
-        var s1 = parseStmt();
+        if (isId('then')) next();
+        var s1 = parseBlock(['else', 'fi']);
         if (isId('else')) next();
-        var s2 = parseStmt();
+        var s2 = parseBlock(['fi']);
         if (isId('fi')) next();
         return { k: 'if', c: c, s1: s1, s2: s2 };
       }
       if (isId('while')) {
         next(); var c2 = parseExp();
         if (isId('do')) next();
-        var body = parseStmt();
+        var body = parseBlock(['od']);
         if (isId('od')) next();
         return { k: 'while', c: c2, s: body };
       }
@@ -470,14 +489,8 @@
       throw new Error('语句解析失败：' + peek().v);
     }
     function parseProg() {
-      var stmts = [parseStmt()];
-      while (peek().t === 'sym' && peek().v === ';') {
-        next();
-        if (peek().t === 'eof') break;
-        stmts.push(parseStmt());
-      }
-      var s = stmts[0];
-      for (var k = 1; k < stmts.length; k++) s = { k: 'seq', s1: s, s2: stmts[k] };
+      var s = parseBlock([]);
+      if (peek().t !== 'eof') throw new Error('多余的内容：' + peek().v);
       return s;
     }
     return parseProg();
@@ -557,51 +570,44 @@
     return '?';
   }
 
-  /* 编译器：AST → 指令序列 */
+  /* 编译器：AST → 指令序列（按讲义的相对偏移规则） */
   function compile(prog) {
-    var code = [];
-    function genExp(e) {
+    var OPS = { '+': 'add', '-': 'minus', '*': 'multiply', '/': 'divide', '%': 'mod',
+      '==': 'equal', '!=': 'notEqual', '<': 'lessThan', '>': 'greaterThan', '<=': 'le', '>=': 'ge' };
+    function E(e) {
       switch (e.k) {
-        case 'num': return code.push(['push', e.v]);
-        case 'bool': return code.push(['push', e.v ? 1 : 0]);
-        case 'var': return code.push(['load', e.v]);
-        case 'neg': genExp(e.a); return code.push(['neg']);
-        case 'not': genExp(e.a); return code.push(['not']);
-        case 'and': genExp(e.a); genExp(e.b); return code.push(['and']);
-        case 'or': genExp(e.a); genExp(e.b); return code.push(['or']);
-        case 'bin':
-          genExp(e.a); genExp(e.b);
-          var m = { '+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '==': 'eq', '!=': 'neq', '<': 'lt', '>': 'gt', '<=': 'le', '>=': 'ge' };
-          return code.push([m[e.op]]);
+        case 'num': return [['push', e.v]];
+        case 'bool': return [['push', e.v ? 1 : 0]];
+        case 'var': return [['load', e.v]];
+        case 'neg': return E(e.a).concat([['neg']]);
+        case 'not': return E(e.a).concat([['not']]);
+        case 'and': return E(e.a).concat(E(e.b), [['and']]);
+        case 'or': return E(e.a).concat(E(e.b), [['or']]);
+        case 'bin': return E(e.a).concat(E(e.b), [[OPS[e.op]]]);
       }
+      return [];
     }
-    function genStmt(s) {
+    function S(s) {
       switch (s.k) {
-        case 'skip': return;
-        case 'asg': genExp(s.e); return code.push(['store', s.x]);
-        case 'seq': genStmt(s.s1); return genStmt(s.s2);
-        case 'if':
-          genExp(s.c);
-          var j1 = code.push(['jumpOnCond', 0]) - 1;
-          genStmt(s.s1);
-          var j2 = code.push(['jump', 0]) - 1;
-          code[j1][1] = code.length;
-          genStmt(s.s2);
-          code[j2][1] = code.length;
-          return;
-        case 'while':
-          var top = code.length;
-          genExp(s.c);
-          var jc = code.push(['bjump', 0]) - 1;
-          genStmt(s.s);
-          code.push(['jump', top]);
-          code[jc][1] = code.length;
-          return;
+        case 'skip': return [];
+        case 'asg': return E(s.e).concat([['store', s.x]]);
+        case 'seq': return S(s.s1).concat(S(s.s2));
+        case 'if': {
+          /* 讲义 p.10：[E] jumpOnCond(2) jump(lenA+2) [A] jump(lenB+1) [B] */
+          var c = E(s.c), a = S(s.s1), b = S(s.s2);
+          return c.concat([['jumpOnCond', 2], ['jump', a.length + 2]], a,
+            [['jump', b.length + 1]], b);
+        }
+        case 'while': {
+          /* 讲义 p.14：[E] jumpOnCond(2) jump(lenB+2) [B] bjump(lenE+lenB+2) */
+          var c2 = E(s.c), body = S(s.s);
+          return c2.concat([['jumpOnCond', 2], ['jump', body.length + 2]], body,
+            [['bjump', c2.length + body.length + 2]]);
+        }
       }
+      return [];
     }
-    genStmt(prog);
-    code.push(['halt']);
-    return code;
+    return S(prog).concat([['quit']]);
   }
 
   /* 虚拟机：执行指令，记录每一步 */
@@ -627,25 +633,30 @@
         case 'neg': stack.push(-stack.pop()); break;
         case 'not': stack.push(stack.pop() ? 0 : 1); break;
         case 'add': var b = stack.pop(), a = stack.pop(); stack.push(a + b); break;
-        case 'sub': var b2 = stack.pop(), a2 = stack.pop(); stack.push(a2 - b2); break;
-        case 'mul': var b3 = stack.pop(), a3 = stack.pop(); stack.push(a3 * b3); break;
-        case 'div': var b4 = stack.pop(), a4 = stack.pop(); stack.push(Math.floor(a4 / b4)); break;
+        case 'minus': var b2 = stack.pop(), a2 = stack.pop(); stack.push(Math.abs(a2 - b2)); break;
+        case 'multiply': var b3 = stack.pop(), a3 = stack.pop(); stack.push(a3 * b3); break;
+        case 'divide': var b4 = stack.pop(), a4 = stack.pop(); stack.push(Math.floor(a4 / b4)); break;
+        case 'mod': var b4b = stack.pop(), a4b = stack.pop(); stack.push(a4b % b4b); break;
         case 'and': var b5 = stack.pop(), a5 = stack.pop(); stack.push((a5 && b5) ? 1 : 0); break;
         case 'or': var b6 = stack.pop(), a6 = stack.pop(); stack.push((a6 || b6) ? 1 : 0); break;
-        case 'eq': var b7 = stack.pop(), a7 = stack.pop(); stack.push(a7 === b7 ? 1 : 0); break;
-        case 'neq': var b8 = stack.pop(), a8 = stack.pop(); stack.push(a8 !== b8 ? 1 : 0); break;
-        case 'lt': var b9 = stack.pop(), a9 = stack.pop(); stack.push(a9 < b9 ? 1 : 0); break;
-        case 'gt': var b10 = stack.pop(), a10 = stack.pop(); stack.push(a10 > b10 ? 1 : 0); break;
+        case 'equal': var b7 = stack.pop(), a7 = stack.pop(); stack.push(a7 === b7 ? 1 : 0); break;
+        case 'notEqual': var b8 = stack.pop(), a8 = stack.pop(); stack.push(a8 !== b8 ? 1 : 0); break;
+        case 'lessThan': var b9 = stack.pop(), a9 = stack.pop(); stack.push(a9 < b9 ? 1 : 0); break;
+        case 'greaterThan': var b10 = stack.pop(), a10 = stack.pop(); stack.push(a10 > b10 ? 1 : 0); break;
         case 'le': var b11 = stack.pop(), a11 = stack.pop(); stack.push(a11 <= b11 ? 1 : 0); break;
         case 'ge': var b12 = stack.pop(), a12 = stack.pop(); stack.push(a12 >= b12 ? 1 : 0); break;
-        case 'jump': pc = ins[1]; break;
-        case 'jumpOnCond': if (stack.pop()) pc = ins[1]; break;
-        case 'bjump': if (!stack.pop()) pc = ins[1]; break;
-        case 'halt': n = 1e9; break;
+        /* 讲义 p.19–20：跳转参数是相对偏移；此处 pc 已自增，故要减 1 再加减 */
+        case 'jump': pc = pc - 1 + ins[1]; break;
+        case 'jumpOnCond': if (stack.pop()) pc = pc - 1 + ins[1]; break;
+        case 'bjump': pc = pc - 1 - ins[1]; break;
+        case 'quit': n = 1e9; break;
       }
     }
     return { trace: trace, env: env, stack: stack, pc: pc };
   }
+
+  /* 供自测脚本使用（不参与界面逻辑） */
+  W._minilaTest = { parse: MLParse, interp: runInterp, compile: compile, vm: runVM };
 
   W.minila = function (el, opts) {
     opts = opts || {};
@@ -694,7 +705,7 @@
       body.innerHTML = h;
     }
     function showCode() {
-      var h = '<div style="font-size:12.5px;color:var(--dim);margin-bottom:8px">编译器把语法树翻译成线性指令；跳转指令的地址是「指令编号」。</div>';
+      var h = '<div style="font-size:12.5px;color:var(--dim);margin-bottom:8px">编译器把语法树翻译成线性指令；跳转参数是<b>相对偏移</b>（讲义 p.19–20 的规则）。</div>';
       h += '<div class="codebox"><pre>';
       code.forEach(function (ins, i) {
         h += '<span style="color:#5c7a99">' + String(i).padStart(3, ' ') + '</span>  ' +
@@ -703,9 +714,10 @@
       });
       h += '</pre></div>';
       h += '<div class="card tip"><div class="card-t">🔎 看懂这三件事就够了</div>' +
-        '<ul><li><code>jumpOnCond n</code>：弹出栈顶，若为真就跳到第 n 条指令</li>' +
-        '<li><code>bjump n</code>：弹出栈顶，若为假就跳到第 n 条指令（while 循环用它退出）</li>' +
-        '<li><code>halt</code>：停机</li></ul></div>';
+        '<ul><li><code>jumpOnCond n</code>：弹出栈顶；非 0 则 <code>pc ← pc+n</code>，否则 <code>pc ← pc+1</code></li>' +
+        '<li><code>jump n</code>：<code>pc ← pc+n</code>（向前，无条件）；while 用它<b>退出</b></li>' +
+        '<li><code>bjump n</code>：<code>pc ← pc−n</code>（向后，无条件）；while 用它<b>回到开头</b></li></ul>' +
+        '<p style="margin:8px 0 0">表里的 <code>n</code> 都是相对增量，不是指令编号：目标序号 = 当前序号 + n（<code>bjump</code> 是减）。</p></div>';
       body.innerHTML = h;
     }
     function envStr(env) {

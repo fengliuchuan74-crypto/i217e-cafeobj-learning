@@ -143,7 +143,18 @@
             else if (i === chosen) x.classList.add('wrong');
           });
           var ex = $('q-explain');
-          ex.innerHTML = '<div class="q-explain"><b>' + (ok ? '✓ 正确' : '✗ 不对') + '</b>　' + (it.why || '') + '</div>';
+          var ow = '';
+          if (it.optWhy && it.optWhy.length) {
+            var labels = it.opts ? it.opts : ['对', '错'];
+            ow = '<div class="opt-why"><div class="ow-t">每个选项为什么对 / 错：</div>';
+            it.optWhy.forEach(function (w, i) {
+              if (!w) return;
+              ow += '<div class="ow-row ' + (i === ansIdx ? 'ok' : (i === chosen ? 'bad' : '')) + '"><span class="k">' + 'ABCDEF'[i] + '</span>' +
+                '<span><span class="ow-opt">' + (labels[i] || '') + '</span> — ' + w + '</span></div>';
+            });
+            ow += '</div>';
+          }
+          ex.innerHTML = '<div class="q-explain"><b>' + (ok ? '✓ 正确' : '✗ 不对，正确答案是 ' + 'ABCDEF'[ansIdx]) + '</b>　' + (it.why || '') + ow + '</div>';
           $('q-next').disabled = false;
           $('q-msg').textContent = ok ? '很好，继续' : '记住这个点，它容易考';
           if (!ok) Store.pushReview({ id: 'q:' + id + ':' + idx, title: (spec.title || '测验') + ' 第 ' + (idx + 1) + ' 题' });

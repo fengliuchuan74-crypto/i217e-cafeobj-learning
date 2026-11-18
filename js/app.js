@@ -81,11 +81,31 @@
   }
 
   /* ---------------- 章节渲染 ---------------- */
+  /* 小节导读卡：是什么 / 为什么 / 怎么用 / 现实应用 / 常见错误 */
+  function guideCard(g) {
+    if (!g) return '';
+    var rows = [['what', '🧩 是什么'], ['why', '❓ 为什么需要'], ['how', '🛠 怎么用'], ['use', '🌍 现实里在哪用']];
+    var h = '<div class="guide-card">';
+    rows.forEach(function (r) {
+      if (g[r[0]]) h += '<div class="g-row"><div class="g-k">' + r[1] + '</div><div class="g-v">' + g[r[0]] + '</div></div>';
+    });
+    if (g.pitfalls && g.pitfalls.length) {
+      h += '<div class="g-row"><div class="g-k">⚠️ 常见错误</div><div class="g-v"><ul>' +
+        g.pitfalls.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></div>';
+    }
+    return h + '</div>';
+  }
+  function listCard(cls, ico, title, items) {
+    if (!items || !items.length) return '';
+    return '<div class="card ' + cls + '"><div class="card-t"><span class="ico">' + ico + '</span>' + title + '</div><ul>' +
+      items.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+  }
   function sectionBlock(c, s, idx) {
     var done = Store.isDone(s.id);
     var h = '<section class="sec-block" id="sec-' + s.id + '" data-sec="' + s.id + '">';
     h += '<h2 class="sec">' + (idx + 1) + '. ' + s.title +
       (done ? ' <span class="badge ok">✓ 已掌握</span>' : '') + '</h2>';
+    h += guideCard(s.guide);
     h += s.html;
     h += '<div class="sec-foot" style="display:flex;justify-content:space-between;align-items:center;' +
       'margin:16px 0 6px;padding-top:10px;border-top:1px dashed #223046">' +
@@ -106,7 +126,9 @@
       c.goals.forEach(function (g) { h += '<li>' + g + '</li>'; });
       h += '</ul></div>';
     }
+    h += listCard('pre', '🧱', '学这一章之前，你需要知道', c.pre);
     c.sections.forEach(function (s, i) { h += sectionBlock(c, s, i); });
+    h += listCard('tip', '📝', '本章小结（合上书能说出这几条，就算学会了）', c.summary);
     if (c.quiz && global.QUIZZES && global.QUIZZES[c.quiz]) {
       var r = Store.quizResult(c.quiz);
       h += '<div class="quiz-cta ' + (r ? 'done' : '') + '" data-quiz="' + c.quiz + '">' +
@@ -121,6 +143,7 @@
     }
     if (c.extra) h += c.extra;
     $('view').innerHTML = h;
+    document.querySelectorAll('.nav-item').forEach(function (el) { el.classList.toggle('active', el.dataset.chap === c.id); });
 
     /* 挂载 widget */
     c.sections.forEach(function (s) {
@@ -163,6 +186,8 @@
     $('view').querySelectorAll('[data-run]').forEach(function (btn) {
       btn.onclick = function () { W.codeRun(btn.dataset.run); };
     });
+    /* 代码块增强（可编辑 / 还原 / 逐行解读）+ 术语悬停解释 */
+    if (global.Learn) { try { Learn.enhance($('view')); } catch (e) { console.error('Learn.enhance 失败', e); } }
     /* 作业草稿：恢复 + 自动保存 */
     $('view').querySelectorAll('textarea[data-draft]').forEach(function (ta) {
       var k = 'draft:' + ta.dataset.draft;
@@ -230,6 +255,9 @@
     $('btn-prev').onclick = function () { App.gotoStep(curStep - 1); };
     $('btn-next').onclick = function () { App.gotoStep(curStep + 1); };
     $('btn-review').onclick = function () { Quiz.reviewQueue(); };
+    if ($('btn-search')) $('btn-search').onclick = function () { Learn.search(); };
+    if ($('btn-gloss')) $('btn-gloss').onclick = function () { Learn.glossary(); };
+    document.addEventListener('keydown', function (e) { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); Learn.search(); } });
     $('modal-close').onclick = closeModal;
     $('modal-back').onclick = function (e) { if (e.target.id === 'modal-back') closeModal(); };
     $('btn-reset').onclick = function () {

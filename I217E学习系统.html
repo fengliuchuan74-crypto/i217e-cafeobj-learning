@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>I217E 関数プログラミング · 互动学习系统</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/learn.css">
 </head>
 <body>
 <div id="app">
@@ -40,6 +41,8 @@
     <header id="topbar">
       <div class="crumbs" id="crumbs"></div>
       <div class="top-actions">
+        <button class="mini-btn" id="btn-search" title="搜索全部课文（快捷键 Ctrl+K）">🔍 搜索</button>
+        <button class="mini-btn" id="btn-gloss" title="所有术语的大白话解释">📘 术语表</button>
         <button class="mini-btn" id="btn-prev">← 上一节</button>
         <button class="mini-btn" id="btn-next">下一节 →</button>
         <button class="mini-btn" id="btn-review">复习队列 <span id="review-count">0</span></button>
@@ -47,7 +50,7 @@
     </header>
     <div id="view"></div>
     <footer id="footer">
-      <span>本地离线运行 · 引擎为简化版 CafeOBJ 解释器，用于学习演示</span>
+      <span>本地离线运行 · 引擎为简化版 CafeOBJ 解释器，用于学习演示 · 带虚线下划线的词，鼠标停上去可看解释</span>
     </footer>
   </main>
 </div>
@@ -62,9 +65,14 @@
 <div id="toast" class="toast hidden"></div>
 
 <script src="js/engine.js"></script>
+<script src="js/glossary.js"></script>
 <script src="js/widgets.js"></script>
 <script src="js/mounts.js"></script>
 <script src="js/quiz.js"></script>
+<script src="js/learn.js"></script>
+<script src="js/pre-labs.js"></script>
+<script src="js/pre-labs2.js"></script>
+<script src="js/content-pre.js"></script>
 <script src="js/content-core.js"></script>
 <script src="js/content-mid.js"></script>
 <script src="js/content-adv.js"></script>
